@@ -1,11 +1,10 @@
 import pygame
-import random
 import sys
+import random
 
-# Initialize pygame
 pygame.init()
 
-# Screen setup
+# Window setup
 WIDTH, HEIGHT = 900, 600
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Ping Pong AI")
@@ -13,101 +12,162 @@ pygame.display.set_caption("Ping Pong AI")
 # Colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
+GRAY = (150, 150, 150)
+BLUE = (0, 150, 255)
+
+font = pygame.font.Font(None, 50)
+clock = pygame.time.Clock()
+
+# Global settings
+ball_size = 20
+difficulty = "Medium"
 
 # Game constants
 PADDLE_WIDTH, PADDLE_HEIGHT = 15, 100
-BALL_SIZE = 20
 PLAYER_SPEED = 7
-AI_SPEED = 6
-BALL_SPEED = 7
 
-# Game objects
-player = pygame.Rect(WIDTH - 40, HEIGHT // 2 - PADDLE_HEIGHT // 2, PADDLE_WIDTH, PADDLE_HEIGHT)
-ai = pygame.Rect(25, HEIGHT // 2 - PADDLE_HEIGHT // 2, PADDLE_WIDTH, PADDLE_HEIGHT)
-ball = pygame.Rect(WIDTH // 2 - BALL_SIZE // 2, HEIGHT // 2 - BALL_SIZE // 2, BALL_SIZE, BALL_SIZE)
+def draw_text(text, y, color=WHITE):
+    txt = font.render(text, True, color)
+    WIN.blit(txt, (WIDTH // 2 - txt.get_width() // 2, y))
 
-ball_dx = random.choice([-1, 1]) * BALL_SPEED
-ball_dy = random.uniform(-1, 1) * BALL_SPEED
+def main_menu():
+    global difficulty, ball_size
 
-clock = pygame.time.Clock()
-font = pygame.font.Font(None, 40)
-player_score = 0
-ai_score = 0
-
-def reset_ball():
-    global ball_dx, ball_dy
-    ball.center = (WIDTH // 2, HEIGHT // 2)
-    ball_dx = random.choice([-1, 1]) * BALL_SPEED
-    ball_dy = random.uniform(-1, 1) * BALL_SPEED
-
-def draw():
-    WIN.fill(BLACK)
-    pygame.draw.rect(WIN, WHITE, player)
-    pygame.draw.rect(WIN, WHITE, ai)
-    pygame.draw.ellipse(WIN, WHITE, ball)
-    pygame.draw.aaline(WIN, WHITE, (WIDTH // 2, 0), (WIDTH // 2, HEIGHT))
-
-    score_text = font.render(f"{ai_score}   {player_score}", True, WHITE)
-    WIN.blit(score_text, (WIDTH // 2 - score_text.get_width() // 2, 20))
-
-    pygame.display.flip()
-
-def move_ai():
-    # Simple prediction: AI moves toward predicted y position of the ball
-    if ball_dx < 0:
-        # Predict ball Y position when it reaches AI side
-        future_y = ball.centery + ball_dy * ((ball.centerx - ai.centerx) / abs(ball_dx))
-        # Bounce prediction off walls
-        while future_y < 0 or future_y > HEIGHT:
-            if future_y < 0:
-                future_y = -future_y
-            elif future_y > HEIGHT:
-                future_y = 2 * HEIGHT - future_y
-
-        # Move AI toward predicted Y
-        if ai.centery < future_y:
-            ai.centery += AI_SPEED
-        elif ai.centery > future_y:
-            ai.centery -= AI_SPEED
-    else:
-        # Return to center when ball moves away
-        if ai.centery < HEIGHT // 2:
-            ai.centery += AI_SPEED / 2
-        elif ai.centery > HEIGHT // 2:
-            ai.centery -= AI_SPEED / 2
-
-    ai.clamp_ip(pygame.Rect(0, 0, WIDTH, HEIGHT))
-
-def main():
-    global ball_dx, ball_dy, player_score, ai_score
-
-    run = True
-    while run:
-        clock.tick(60)
+    selected = 0
+    options = ["Play", "Settings", "Quit"]
+    while True:
+        WIN.fill(BLACK)
+        draw_text("🏓 PING PONG AI", 100)
+        for i, option in enumerate(options):
+            color = BLUE if i == selected else WHITE
+            draw_text(option, 250 + i * 80, color)
+        pygame.display.flip()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                run = False
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    selected = (selected - 1) % len(options)
+                elif event.key == pygame.K_DOWN:
+                    selected = (selected + 1) % len(options)
+                elif event.key == pygame.K_RETURN:
+                    if options[selected] == "Play":
+                        game_loop()
+                    elif options[selected] == "Settings":
+                        settings_menu()
+                    elif options[selected] == "Quit":
+                        pygame.quit()
+                        sys.exit()
 
-        # Player movement
+        clock.tick(30)
+
+def settings_menu():
+    global difficulty, ball_size
+    levels = ["Easy", "Medium", "Hard"]
+    selected = 0
+    while True:
+        WIN.fill(BLACK)
+        draw_text("⚙️ SETTINGS", 100)
+        draw_text(f"Difficulty: {difficulty}", 250)
+        draw_text(f"Ball Size: {ball_size}", 330)
+        draw_text("Press ← or → to adjust", 420, GRAY)
+        draw_text("Press ESC to go back", 500, GRAY)
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return
+                elif event.key == pygame.K_RIGHT:
+                    if difficulty == "Easy":
+                        difficulty = "Medium"
+                    elif difficulty == "Medium":
+                        difficulty = "Hard"
+                elif event.key == pygame.K_LEFT:
+                    if difficulty == "Hard":
+                        difficulty = "Medium"
+                    elif difficulty == "Medium":
+                        difficulty = "Easy"
+                elif event.key == pygame.K_UP:
+                    ball_size = min(40, ball_size + 2)
+                elif event.key == pygame.K_DOWN:
+                    ball_size = max(10, ball_size - 2)
+
+        clock.tick(30)
+
+def game_loop():
+    global difficulty, ball_size
+
+    # Difficulty affects AI speed
+    ai_speed = {"Easy": 4, "Medium": 6, "Hard": 8}[difficulty]
+    BALL_SPEED = 7
+
+    # Objects
+    player = pygame.Rect(WIDTH - 40, HEIGHT // 2 - PADDLE_HEIGHT // 2, PADDLE_WIDTH, PADDLE_HEIGHT)
+    ai = pygame.Rect(25, HEIGHT // 2 - PADDLE_HEIGHT // 2, PADDLE_WIDTH, PADDLE_HEIGHT)
+    ball = pygame.Rect(WIDTH // 2 - ball_size // 2, HEIGHT // 2 - ball_size // 2, ball_size, ball_size)
+    ball_dx = random.choice([-1, 1]) * BALL_SPEED
+    ball_dy = random.uniform(-1, 1) * BALL_SPEED
+
+    player_score = 0
+    ai_score = 0
+    running = True
+
+    def reset_ball():
+        nonlocal ball_dx, ball_dy
+        ball.center = (WIDTH // 2, HEIGHT // 2)
+        ball_dx = random.choice([-1, 1]) * BALL_SPEED
+        ball_dy = random.uniform(-1, 1) * BALL_SPEED
+
+    while running:
+        clock.tick(60)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                return  # go back to menu
+
+        # Player move
         keys = pygame.key.get_pressed()
         if keys[pygame.K_UP] and player.top > 0:
             player.y -= PLAYER_SPEED
         if keys[pygame.K_DOWN] and player.bottom < HEIGHT:
             player.y += PLAYER_SPEED
 
-        # Move AI
-        move_ai()
+        # AI move (predictive)
+        if ball_dx < 0:
+            predicted_y = ball.centery + ball_dy * ((ball.centerx - ai.centerx) / abs(ball_dx))
+            while predicted_y < 0 or predicted_y > HEIGHT:
+                if predicted_y < 0:
+                    predicted_y = -predicted_y
+                elif predicted_y > HEIGHT:
+                    predicted_y = 2 * HEIGHT - predicted_y
 
-        # Move Ball
+            if ai.centery < predicted_y:
+                ai.centery += ai_speed
+            elif ai.centery > predicted_y:
+                ai.centery -= ai_speed
+        else:
+            if ai.centery < HEIGHT // 2:
+                ai.centery += ai_speed / 2
+            elif ai.centery > HEIGHT // 2:
+                ai.centery -= ai_speed / 2
+
+        # Ball move
         ball.x += ball_dx
         ball.y += ball_dy
 
-        # Wall collision
+        # Wall bounce
         if ball.top <= 0 or ball.bottom >= HEIGHT:
             ball_dy *= -1
 
-        # Paddle collision (adds bounce angles)
+        # Paddle bounce with angles
         if ball.colliderect(player):
             offset = (ball.centery - player.centery) / (PADDLE_HEIGHT / 2)
             ball_dx *= -1
@@ -117,7 +177,7 @@ def main():
             ball_dx *= -1
             ball_dy = offset * BALL_SPEED
 
-        # Scoring
+        # Score
         if ball.left <= 0:
             player_score += 1
             reset_ball()
@@ -125,10 +185,16 @@ def main():
             ai_score += 1
             reset_ball()
 
-        draw()
+        # Draw
+        WIN.fill(BLACK)
+        pygame.draw.rect(WIN, WHITE, player)
+        pygame.draw.rect(WIN, WHITE, ai)
+        pygame.draw.ellipse(WIN, WHITE, ball)
+        pygame.draw.aaline(WIN, WHITE, (WIDTH // 2, 0), (WIDTH // 2, HEIGHT))
 
-    pygame.quit()
-    sys.exit()
+        score_text = font.render(f"{ai_score}   {player_score}", True, WHITE)
+        WIN.blit(score_text, (WIDTH // 2 - score_text.get_width() // 2, 20))
+        pygame.display.flip()
 
 if __name__ == "__main__":
-    main()
+    main_menu()
