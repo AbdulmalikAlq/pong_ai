@@ -51,14 +51,16 @@ def main_menu():
         clock.tick(30)
 
 def settings_menu():
-    global difficulty, ball_size
+    global difficulty, ball_size, WIN_SCORE
     while True:
         WIN.fill(BLACK)
         draw_text("⚙️ SETTINGS", 100)
         draw_text(f"Difficulty: {difficulty}", 250)
         draw_text(f"Ball Size: {ball_size}", 330)
-        draw_text("←/→ change level | ↑/↓ change size", 430, GRAY)
-        draw_text("ESC to go back", 500, GRAY)
+        draw_text(f"Win Score: {WIN_SCORE}", 410)
+        draw_text("←/→ change level | ↑/↓ change size", 450, GRAY)
+        draw_text("PageUp/PageDown change win score", 490, GRAY)
+        draw_text("ESC to go back", 530, GRAY)
         pygame.display.flip()
 
         for e in pygame.event.get():
@@ -73,6 +75,10 @@ def settings_menu():
                     difficulty = "Medium" if difficulty == "Hard" else "Easy"
                 if e.key == pygame.K_UP: ball_size = min(40, ball_size + 2)
                 if e.key == pygame.K_DOWN: ball_size = max(10, ball_size - 2)
+                if e.key == pygame.K_PAGEUP:
+                    WIN_SCORE = min(50, WIN_SCORE + 1)
+                if e.key == pygame.K_PAGEDOWN:
+                    WIN_SCORE = max(1, WIN_SCORE - 1)
         clock.tick(30)
 
 def game_loop():
