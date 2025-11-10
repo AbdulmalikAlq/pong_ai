@@ -15,7 +15,7 @@ clock = pygame.time.Clock()
 # Default settings
 ball_size = 20
 difficulty = "Medium"
-WIN_SCORE = 10
+WIN_SCORE = 7
 
 # Paddle constants
 PADDLE_WIDTH, PADDLE_HEIGHT = 15, 100
@@ -59,7 +59,7 @@ def settings_menu():
         draw_text(f"Ball Size: {ball_size}", 330)
         draw_text(f"Win Score: {WIN_SCORE}", 410)
         draw_text("←/→ change level | ↑/↓ change size", 450, GRAY)
-        draw_text("PageUp/PageDown change win score", 490, GRAY)
+        draw_text("+ / - change win score", 490, GRAY)
         draw_text("ESC to go back", 530, GRAY)
         pygame.display.flip()
 
@@ -75,9 +75,10 @@ def settings_menu():
                     difficulty = "Medium" if difficulty == "Hard" else "Easy"
                 if e.key == pygame.K_UP: ball_size = min(40, ball_size + 2)
                 if e.key == pygame.K_DOWN: ball_size = max(10, ball_size - 2)
-                if e.key == pygame.K_PAGEUP:
+                # allow + (equals key or keypad plus) and - (minus or keypad minus)
+                if e.key in (pygame.K_EQUALS, getattr(pygame, 'K_KP_PLUS', None)):
                     WIN_SCORE = min(50, WIN_SCORE + 1)
-                if e.key == pygame.K_PAGEDOWN:
+                if e.key in (pygame.K_MINUS, getattr(pygame, 'K_KP_MINUS', None)):
                     WIN_SCORE = max(1, WIN_SCORE - 1)
         clock.tick(30)
 
