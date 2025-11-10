@@ -9,39 +9,65 @@ A classic Pong game built with **Python** and **Pygame**, where you play against
   - Medium: balanced AI
   - Hard: fast and precise AI
 - **Settings Menu**
-  - Change ball size
-  - Adjust difficulty before playing
-- **Main Menu**
-  - Play, Settings, Quit
-- **Dynamic Ball Physics**
-  - Realistic bounce angles and wall reflections
-- **Controls**
-  - Move up: `↑`
-  - Move down: `↓`
-  - Back to menu: `Esc`
+  # 🏓 Ping Pong AI (Python + Pygame)
 
+  A simple Pong clone written in Python using Pygame. Play against a prediction-based AI with configurable difficulty, ball size, and an adjustable win score.
 
-🧩 Technologies Used
+  ## Features
 
-Python 3
+  - Main menu with Play / Settings / Quit
+  - Adjustable difficulty (Easy / Medium / Hard) — affects AI speed, reaction and aiming error
+  - Adjustable ball size
+  - Adjustable win score (changeable from Settings)
+  - Pause (P), reset scores (R), and win screen when a player reaches the win score
+  - AI prediction that simulates the ball trajectory (including wall bounces) for smarter play
+  - Ball speed increases slightly on paddle hits (capped)
 
-Pygame
+  ## Controls
 
-🚀 Future Improvements
+  - Move up: ↑ (Up arrow)
+  - Move down: ↓ (Down arrow)
+  - Pause / Resume: P
+  - Reset scores & ball: R
+  - Back / Exit to menu: Esc
 
-Add sound effects (bounce, score, hit)
+  Settings menu keys (open from Main Menu → Settings):
+  - Change difficulty: ← / →
+  - Change ball size: ↑ / ↓
+  - Change win score: + / - (supports main keyboard and keypad)
 
-Add score limit and match win screen
+  ## Requirements
 
-Add 2-player multiplayer mode
+  - Python 3.8+
+  - pygame
 
-## ⚙️ How to Run
+  Install pygame with pip if you don't have it:
 
-1. Install Pygame:
-```bash
-pip install pygame
-Run the game:
-bash
-Copy code
-python pong_ai.py
+  ```bash
+  python3 -m pip install pygame
+  ```
+
+  If you use the included virtualenv (`.venv`), activate it first:
+
+  ```bash
+  source .venv/bin/activate
+  ```
+
+  ## Run
+
+  From the project root (where `pong_ai.py` is located):
+
+  ```bash
+  python3 pong_ai.py
+  ```
+
+  ## Notes & Tips
+
+  - The win score default can be changed in Settings; it's bounded between 1 and 50.
+  - If the AI feels too easy or too hard, try the other difficulty levels — they adjust AI speed, reaction delay and aiming error.
+  - This project is intended as a learning/demo project; feel free to fork and add features like sound, keyboard remapping, or two-player mode.
+
+  ## License
+
+  MIT-style; see repository for details.
 
