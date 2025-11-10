@@ -79,10 +79,12 @@ def game_loop():
     global difficulty, ball_size
 
     # Difficulty behavior
+    # Better-tuned AI params: Easy = slower reaction and larger error but not too slow;
+    # Medium = balanced; Hard = faster and low error.
     ai_params = {
-        "Easy": {"speed": 4, "error": 50, "reaction": 10},
-        "Medium": {"speed": 6, "error": 20, "reaction": 5},
-        "Hard": {"speed": 8, "error": 5, "reaction": 0}
+        "Easy": {"speed": 7, "error": 60, "reaction": 12},
+        "Medium": {"speed": 9, "error": 20, "reaction": 6},
+        "Hard": {"speed": 11, "error": 6, "reaction": 2}
     }[difficulty]
 
     BALL_SPEED = 7
@@ -98,6 +100,28 @@ def game_loop():
     ai_score = 0
     ai_reaction_timer = 0
     paused = False
+
+    def predict_ball_y(bx, by, bdx, bdy, target_x):
+        # Simulate the ball forward (discrete steps) to estimate y when it reaches target_x
+        sim_x = bx
+        sim_y = by
+        sim_dx = bdx
+        sim_dy = bdy
+        # safety to avoid infinite loops
+        for _ in range(2000):
+            sim_x += sim_dx
+            sim_y += sim_dy
+            # bounce on top/bottom
+            if sim_y <= 0:
+                sim_y = -sim_y
+                sim_dy *= -1
+            if sim_y >= HEIGHT:
+                sim_y = 2*HEIGHT - sim_y
+                sim_dy *= -1
+            # check if passed target_x depending on direction
+            if (sim_dx > 0 and sim_x >= target_x) or (sim_dx < 0 and sim_x <= target_x):
+                return max(0, min(HEIGHT, sim_y))
+        return HEIGHT // 2
 
     def reset_ball():
         nonlocal ball_dx, ball_dy
@@ -130,24 +154,24 @@ def game_loop():
 
     while True:
         clock.tick(60)
+        # Single event loop: handle quit, pause, reset and menu escape
         for e in pygame.event.get():
             if e.type == pygame.QUIT:
                 pygame.quit(); sys.exit()
-            if e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
-                return
-
-        # Player move
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_UP] and player.top > 0: player.y -= PLAYER_SPEED
-        if keys[pygame.K_DOWN] and player.bottom < HEIGHT: player.y += PLAYER_SPEED
-
-        # Controls: P = pause, R = reset scores, ESC = quit round
-        for e in pygame.event.get():
             if e.type == pygame.KEYDOWN:
+                if e.key == pygame.K_ESCAPE:
+                    return
                 if e.key == pygame.K_p:
                     paused = not paused
                 if e.key == pygame.K_r:
                     reset_round()
+
+        # Player move (continuous)
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_UP] and player.top > 0:
+            player.y -= PLAYER_SPEED
+        if keys[pygame.K_DOWN] and player.bottom < HEIGHT:
+            player.y += PLAYER_SPEED
         if paused:
             # draw paused overlay
             pause_txt = font.render("PAUSED - Press P to resume", True, GRAY)
@@ -155,14 +179,23 @@ def game_loop():
             pygame.display.flip()
             continue
 
-        # AI move (with delay + error)
+        # AI move (reaction delay + prediction + error)
         ai_reaction_timer += 1
         if ai_reaction_timer > ai_params["reaction"]:
             ai_reaction_timer = 0
-            # AI only reacts after its delay
-            target_y = ball.centery + random.randint(-ai_params["error"], ai_params["error"])
-            if ai.centery < target_y: ai.centery += ai_params["speed"]
-            elif ai.centery > target_y: ai.centery -= ai_params["speed"]
+            # Predict where the ball will cross the AI's X and move toward it with some error
+            if ball_dx < 0:
+                predicted = predict_ball_y(ball.centerx, ball.centery, ball_dx, ball_dy, ai.centerx)
+                target_y = predicted + random.randint(-ai_params["error"], ai_params["error"])
+            else:
+                # ball moving away: return toward center (defensive)
+                target_y = HEIGHT // 2 + random.randint(-ai_params["error"]//2, ai_params["error"]//2)
+
+            # move toward target but don't overshoot
+            if ai.centery < target_y:
+                ai.centery = min(ai.centery + ai_params["speed"], target_y)
+            elif ai.centery > target_y:
+                ai.centery = max(ai.centery - ai_params["speed"], target_y)
 
         # Ball movement
         ball.x += ball_dx
