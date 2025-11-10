@@ -20,15 +20,6 @@ A classic Pong game built with **Python** and **Pygame**, where you play against
   - Move down: `↓`
   - Back to menu: `Esc`
 
-## ⚙️ How to Run
-
-1. Install Pygame:
-```bash
-pip install pygame
-Run the game:
-bash
-Copy code
-python pong_ai.py
 
 🧩 Technologies Used
 
@@ -43,3 +34,14 @@ Add sound effects (bounce, score, hit)
 Add score limit and match win screen
 
 Add 2-player multiplayer mode
+
+## ⚙️ How to Run
+
+1. Install Pygame:
+```bash
+pip install pygame
+Run the game:
+bash
+Copy code
+python pong_ai.py
+
