@@ -15,6 +15,7 @@ clock = pygame.time.Clock()
 # Default settings
 ball_size = 20
 difficulty = "Medium"
+WIN_SCORE = 10
 
 # Paddle constants
 PADDLE_WIDTH, PADDLE_HEIGHT = 15, 100
@@ -85,6 +86,7 @@ def game_loop():
     }[difficulty]
 
     BALL_SPEED = 7
+    MAX_BALL_SPEED = 15
     player = pygame.Rect(WIDTH - 40, HEIGHT//2 - PADDLE_HEIGHT//2, PADDLE_WIDTH, PADDLE_HEIGHT)
     ai = pygame.Rect(25, HEIGHT//2 - PADDLE_HEIGHT//2, PADDLE_WIDTH, PADDLE_HEIGHT)
     ball = pygame.Rect(WIDTH//2 - ball_size//2, HEIGHT//2 - ball_size//2, ball_size, ball_size)
@@ -95,12 +97,36 @@ def game_loop():
     player_score = 0
     ai_score = 0
     ai_reaction_timer = 0
+    paused = False
 
     def reset_ball():
         nonlocal ball_dx, ball_dy
         ball.center = (WIDTH//2, HEIGHT//2)
         ball_dx = random.choice([-1, 1]) * BALL_SPEED
         ball_dy = random.uniform(-1, 1) * BALL_SPEED
+
+    def reset_round():
+        nonlocal player_score, ai_score, BALL_SPEED
+        player_score = 0
+        ai_score = 0
+        BALL_SPEED = 7
+        reset_ball()
+
+    def show_win_screen(winner):
+        # simple blocking win screen: press Enter to return to menu
+        while True:
+            WIN.fill(BLACK)
+            draw_text(f"{winner} Wins!", 180, BLUE)
+            draw_text("Press ENTER to return to menu", 320, GRAY)
+            pygame.display.flip()
+            for e in pygame.event.get():
+                if e.type == pygame.QUIT:
+                    pygame.quit(); sys.exit()
+                if e.type == pygame.KEYDOWN:
+                    if e.key == pygame.K_RETURN:
+                        return
+                    if e.key == pygame.K_ESCAPE:
+                        return
 
     while True:
         clock.tick(60)
@@ -114,6 +140,20 @@ def game_loop():
         keys = pygame.key.get_pressed()
         if keys[pygame.K_UP] and player.top > 0: player.y -= PLAYER_SPEED
         if keys[pygame.K_DOWN] and player.bottom < HEIGHT: player.y += PLAYER_SPEED
+
+        # Controls: P = pause, R = reset scores, ESC = quit round
+        for e in pygame.event.get():
+            if e.type == pygame.KEYDOWN:
+                if e.key == pygame.K_p:
+                    paused = not paused
+                if e.key == pygame.K_r:
+                    reset_round()
+        if paused:
+            # draw paused overlay
+            pause_txt = font.render("PAUSED - Press P to resume", True, GRAY)
+            WIN.blit(pause_txt, (WIDTH//2 - pause_txt.get_width()//2, HEIGHT//2 - pause_txt.get_height()//2))
+            pygame.display.flip()
+            continue
 
         # AI move (with delay + error)
         ai_reaction_timer += 1
@@ -132,15 +172,21 @@ def game_loop():
         if ball.top <= 0 or ball.bottom >= HEIGHT:
             ball_dy *= -1
 
-        # Paddle collision
-        if ball.colliderect(player):
-            offset = (ball.centery - player.centery) / (PADDLE_HEIGHT / 2)
+        # Paddle collision: reflect and slightly increase speed up to cap
+        if ball.colliderect(player) or ball.colliderect(ai):
+            offset = (ball.centery - (player.centery if ball.colliderect(player) else ai.centery)) / (PADDLE_HEIGHT / 2)
+            # reverse X
             ball_dx *= -1
-            ball_dy = offset * BALL_SPEED
-        if ball.colliderect(ai):
-            offset = (ball.centery - ai.centery) / (PADDLE_HEIGHT / 2)
-            ball_dx *= -1
-            ball_dy = offset * BALL_SPEED
+            # set Y based on where it hit
+            ball_dy = offset * abs(ball_dx)
+            # gradually increase speed but cap it
+            ball_dx *= 1.05
+            ball_dy *= 1.05
+            # cap speeds
+            if abs(ball_dx) > MAX_BALL_SPEED:
+                ball_dx = MAX_BALL_SPEED * (1 if ball_dx > 0 else -1)
+            if abs(ball_dy) > MAX_BALL_SPEED:
+                ball_dy = MAX_BALL_SPEED * (1 if ball_dy > 0 else -1)
 
         # Score
         if ball.left <= 0:
@@ -150,14 +196,30 @@ def game_loop():
             ai_score += 1
             reset_ball()
 
+        # Win condition
+        if player_score >= WIN_SCORE:
+            show_win_screen("Player")
+            return
+        if ai_score >= WIN_SCORE:
+            show_win_screen("AI")
+            return
+
         # Draw
         WIN.fill(BLACK)
         pygame.draw.rect(WIN, WHITE, player)
         pygame.draw.rect(WIN, WHITE, ai)
         pygame.draw.ellipse(WIN, WHITE, ball)
         pygame.draw.aaline(WIN, WHITE, (WIDTH//2, 0), (WIDTH//2, HEIGHT))
+        # Scores and labels
         score_text = font.render(f"{ai_score}   {player_score}", True, WHITE)
         WIN.blit(score_text, (WIDTH//2 - score_text.get_width()//2, 20))
+        # Player/AI labels
+        small = pygame.font.Font(None, 28)
+        WIN.blit(small.render("AI", True, GRAY), (ai.x, ai.y - 24))
+        WIN.blit(small.render("You", True, GRAY), (player.x - 10, player.y - 24))
+        # Instructions
+        instr = pygame.font.Font(None, 24).render("P: Pause | R: Reset scores | ESC: Exit to menu", True, GRAY)
+        WIN.blit(instr, (WIDTH//2 - instr.get_width()//2, HEIGHT - 30))
         pygame.display.flip()
 
 if __name__ == "__main__":
