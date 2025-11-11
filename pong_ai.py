@@ -1,7 +1,7 @@
 import pygame, sys, random
 
 pygame.init()
-WIDTH, HEIGHT = 900, 600
+WIDTH, HEIGHT = 1500, 900
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Ping Pong AI")
 
@@ -30,7 +30,7 @@ def main_menu():
     selected = 0
     while True:
         WIN.fill(BLACK)
-        draw_text("🏓 PING PONG AI", 100)
+        draw_text("PING PONG AI", 100)
         for i, opt in enumerate(options):
             color = BLUE if i == selected else WHITE
             draw_text(opt, 250 + i * 80, color)
@@ -54,7 +54,7 @@ def settings_menu():
     global difficulty, ball_size, WIN_SCORE
     while True:
         WIN.fill(BLACK)
-        draw_text("⚙️ SETTINGS", 100)
+        draw_text("SETTINGS", 100)
         draw_text(f"Difficulty: {difficulty}", 250)
         draw_text(f"Ball Size: {ball_size}", 330)
         draw_text(f"Win Score: {WIN_SCORE}", 410)
