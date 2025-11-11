@@ -52,34 +52,54 @@ def main_menu():
 
 def settings_menu():
     global difficulty, ball_size, WIN_SCORE
+    options = ["Difficulty", "Ball Size", "Win Score", "Back"]
+    selected = 0
     while True:
         WIN.fill(BLACK)
-        draw_text("SETTINGS", 100)
-        draw_text(f"Difficulty: {difficulty}", 250)
-        draw_text(f"Ball Size: {ball_size}", 330)
-        draw_text(f"Win Score: {WIN_SCORE}", 410)
-        draw_text("←/→ change level | ↑/↓ change size", 450, GRAY)
-        draw_text("+ / - change win score", 490, GRAY)
-        draw_text("ESC to go back", 530, GRAY)
+        draw_text("⚙️ SETTINGS", 80)
+
+        # render options
+        for i, opt in enumerate(options):
+            y = 180 + i * 80
+            color = BLUE if i == selected else WHITE
+            if opt == "Difficulty":
+                txt = f"Difficulty: {difficulty}"
+            elif opt == "Ball Size":
+                txt = f"Ball Size: {ball_size}"
+            elif opt == "Win Score":
+                txt = f"Win Score: {WIN_SCORE}"
+            else:
+                txt = opt
+            draw_text(txt, y, color)
+
+        draw_text("←/→ change value | ↑/↓ navigate | Enter/ESC to go back", 520, GRAY)
         pygame.display.flip()
 
         for e in pygame.event.get():
             if e.type == pygame.QUIT:
                 pygame.quit(); sys.exit()
             if e.type == pygame.KEYDOWN:
-                if e.key == pygame.K_ESCAPE:
-                    return
-                if e.key == pygame.K_RIGHT:
-                    difficulty = "Medium" if difficulty == "Easy" else "Hard" if difficulty == "Medium" else "Hard"
-                if e.key == pygame.K_LEFT:
-                    difficulty = "Medium" if difficulty == "Hard" else "Easy"
-                if e.key == pygame.K_UP: ball_size = min(40, ball_size + 2)
-                if e.key == pygame.K_DOWN: ball_size = max(10, ball_size - 2)
-                # allow + (equals key or keypad plus) and - (minus or keypad minus)
-                if e.key in (pygame.K_EQUALS, getattr(pygame, 'K_KP_PLUS', None)):
-                    WIN_SCORE = min(50, WIN_SCORE + 1)
-                if e.key in (pygame.K_MINUS, getattr(pygame, 'K_KP_MINUS', None)):
-                    WIN_SCORE = max(1, WIN_SCORE - 1)
+                if e.key == pygame.K_UP:
+                    selected = (selected - 1) % len(options)
+                elif e.key == pygame.K_DOWN:
+                    selected = (selected + 1) % len(options)
+                elif e.key == pygame.K_LEFT or e.key == pygame.K_RIGHT:
+                    # change the value for the selected option
+                    dir = 1 if e.key == pygame.K_RIGHT else -1
+                    if options[selected] == "Difficulty":
+                        # cycle difficulties
+                        order = ["Easy", "Medium", "Hard"]
+                        idx = order.index(difficulty)
+                        idx = (idx + dir) % len(order)
+                        difficulty = order[idx]
+                    elif options[selected] == "Ball Size":
+                        ball_size = max(10, min(40, ball_size + dir * 2))
+                    elif options[selected] == "Win Score":
+                        WIN_SCORE = max(1, min(50, WIN_SCORE + dir))
+                elif e.key == pygame.K_RETURN or e.key == pygame.K_ESCAPE:
+                    # If Back selected or ESC pressed, return to main menu
+                    if options[selected] == "Back" or e.key == pygame.K_ESCAPE:
+                        return
         clock.tick(30)
 
 def game_loop():
